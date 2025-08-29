@@ -132,7 +132,7 @@ if st.button("Predict"):
     
     # 保存并显示 SHAP 图
     plt.savefig("shap_force_plot.png", bbox_inches='tight', dpi=300)
-    plt.close()  # 关闭当前图形以释放内存
+    # plt.close()  # 关闭当前图形以释放内存
     st.image("shap_force_plot.png")
     
 
