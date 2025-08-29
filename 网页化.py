@@ -133,19 +133,17 @@ if st.button("Predict"):
     # 保存并显示 SHAP 图
     plt.savefig("shap_force_plot.png", bbox_inches='tight', dpi=300)
     plt.close()  # 关闭当前图形以释放内存
-    
-    st.subheader("SHAP 力图解释")
     st.image("shap_force_plot.png")
     
 
-    # 清理临时文件
-    import os
-    import time
-    time.sleep(1)  # 等待图片显示完成
-    try:
-        os.remove("shap_force_plot.png")
-    except FileNotFoundError:
-        pass
+    # # 清理临时文件
+    # import os
+    # import time
+    # time.sleep(1)  # 等待图片显示完成
+    # try:
+    #     os.remove("shap_force_plot.png")
+    # except FileNotFoundError:
+    #     pass
 
 
 
