@@ -56,26 +56,36 @@ features_raw = np.array([feature_values])
 
 # 预测与 SHAP 可视化
 if st.button("Predict"):
-    # 显示输入的原始数据
-    st.subheader("输入数据处理过程:")
-    st.write("**原始输入数据:**")
-    raw_data_df = pd.DataFrame([feature_values], columns=feature_ranges.keys())
-    st.dataframe(raw_data_df)
+    # # 显示输入的原始数据
+    # st.subheader("输入数据处理过程:")
+    # st.write("**原始输入数据:**")
+    # raw_data_df = pd.DataFrame([feature_values], columns=feature_ranges.keys())
+    # st.dataframe(raw_data_df)
     
     # 对输入数据进行标准化处理
     features_scaled = scaler.transform(features_raw)
     
-    # 显示标准化后的数据
-    st.write("**标准化后的数据:**")
-    scaled_data_df = pd.DataFrame(features_scaled, columns=feature_ranges.keys())
-    st.dataframe(scaled_data_df)
+    # # 显示标准化后的数据
+    # st.write("**标准化后的数据:**")
+    # scaled_data_df = pd.DataFrame(features_scaled, columns=feature_ranges.keys())
+    # st.dataframe(scaled_data_df)
     
     # 模型预测（使用标准化后的数据）
     predicted_class = model.predict(features_scaled)[0]
     predicted_proba = model.predict_proba(features_scaled)[0]
 
-    # 提取预测的类别概率
-    probability = predicted_proba[predicted_class] * 100
+    # 提取失代偿发生的概率（通常是类别1的概率）
+    # 对于二分类问题：类别0=无失代偿，类别1=有失代偿
+    decompensation_probability = predicted_proba[1] * 100  # 失代偿发生的概率
+    
+    # 显示详细的预测信息
+    st.subheader("预测结果")
+    st.write(f"**预测类别**: {'失代偿' if predicted_class == 1 else '无失代偿'}")
+    st.write(f"**失代偿发生概率**: {decompensation_probability:.2f}%")
+    st.write(f"**无失代偿概率**: {predicted_proba[0]*100:.2f}%")
+    
+    # 使用失代偿发生的概率作为主要显示结果
+    probability = decompensation_probability
 
     # 显示预测结果，使用 Matplotlib 渲染指定字体
     text = f"Predicted possibility of Postoperative Decompensation after TACE is {probability:.2f}%"
@@ -96,28 +106,57 @@ if st.button("Predict"):
     features_df_scaled = pd.DataFrame(features_scaled, columns=feature_ranges.keys())
     shap_values = explainer.shap_values(features_df_scaled)
 
-    # 生成 SHAP 力图（显示原始特征值但使用标准化数据的SHAP值）
+    # 生成 SHAP 力图
     class_index = predicted_class  # 当前预测类别
+    
+    # 检查 shap_values 的格式
+    if isinstance(shap_values, list):
+        # 多分类情况，shap_values 是列表
+        shap_values_for_class = shap_values[class_index]
+        expected_value = explainer.expected_value[class_index]
+    else:
+        # 二分类情况，shap_values 是数组
+        if len(shap_values.shape) == 3:
+            shap_values_for_class = shap_values[0, :, class_index]
+            expected_value = explainer.expected_value[class_index]
+        else:
+            shap_values_for_class = shap_values[0]
+            expected_value = explainer.expected_value
+    
     # 为了可读性，在SHAP图中显示原始特征值
     features_df_original = pd.DataFrame([feature_values], columns=feature_ranges.keys())
-    shap_fig = shap.force_plot(
-        explainer.expected_value[class_index],
-        shap_values[:,:,class_index],
-        features_df_original,  # 显示原始值以便理解
+    
+    # 生成 SHAP 力图
+    plt.figure(figsize=(12, 3))
+    shap.force_plot(
+        expected_value,
+        shap_values_for_class,
+        features_df_original.iloc[0],  # 传递Series而不是DataFrame
         matplotlib=True,
+        show=False
     )
+    
     # 保存并显示 SHAP 图
-    plt.savefig("shap_force_plot.png", bbox_inches='tight', dpi=1200)
+    plt.savefig("shap_force_plot.png", bbox_inches='tight', dpi=300)
+    plt.close()  # 关闭当前图形以释放内存
+    
+    st.subheader("SHAP 力图解释")
     st.image("shap_force_plot.png")
+    
+    # 添加说明
+    st.write("**力图解释：**")
+    st.write("- 红色：推高预测概率的特征")
+    st.write("- 蓝色：降低预测概率的特征")
+    st.write("- 基线值：模型的平均预测值")
     
     # 清理临时文件
     import os
+    import time
+    time.sleep(1)  # 等待图片显示完成
     try:
-        os.remove("prediction_text.png")
         os.remove("shap_force_plot.png")
     except FileNotFoundError:
         pass
 
 st.write("Streamlit version:", st.__version__)
-st.write("Note: 所有输入数据已通过StandardScaler进行标准化处理，确保与训练模型的数据格式一致。")
 
