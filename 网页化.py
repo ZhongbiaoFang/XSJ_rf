@@ -78,12 +78,6 @@ if st.button("Predict"):
     # 对于二分类问题：类别0=无失代偿，类别1=有失代偿
     decompensation_probability = predicted_proba[1] * 100  # 失代偿发生的概率
     
-    # 显示详细的预测信息
-    st.subheader("预测结果")
-    st.write(f"**预测类别**: {'失代偿' if predicted_class == 1 else '无失代偿'}")
-    st.write(f"**失代偿发生概率**: {decompensation_probability:.2f}%")
-    st.write(f"**无失代偿概率**: {predicted_proba[0]*100:.2f}%")
-    
     # 使用失代偿发生的概率作为主要显示结果
     probability = decompensation_probability
 
@@ -143,12 +137,7 @@ if st.button("Predict"):
     st.subheader("SHAP 力图解释")
     st.image("shap_force_plot.png")
     
-    # 添加说明
-    st.write("**力图解释：**")
-    st.write("- 红色：推高预测概率的特征")
-    st.write("- 蓝色：降低预测概率的特征")
-    st.write("- 基线值：模型的平均预测值")
-    
+
     # 清理临时文件
     import os
     import time
@@ -158,5 +147,5 @@ if st.button("Predict"):
     except FileNotFoundError:
         pass
 
-st.write("Streamlit version:", st.__version__)
+
 
